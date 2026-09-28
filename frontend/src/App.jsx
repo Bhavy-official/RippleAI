@@ -138,6 +138,7 @@ export default function App() {
   const [error, setError] = useState('')
   const [replayIncident, setReplayIncident] = useState(null)
   const [selectedIncident, setSelectedIncident] = useState(null)
+  const [manualSelect, setManualSelect] = useState(false)  // true = user clicked from list
   const autoStarted = useRef(false)
 
   // Track latest breakdown for score bar
@@ -157,11 +158,34 @@ export default function App() {
     return unsub
   }, [])
 
-  // Auto-select the first active incident when one appears
+  // Auto-switch to the newest ACTIVE incident whenever the list changes.
+  // Only respect manual selection if that incident is still not RESOLVED.
   useEffect(() => {
-    const active = state.incidents.find(i => i.state !== 'RESOLVED')
-    if (active && (!selectedIncident || selectedIncident.id !== active.id)) {
-      setSelectedIncident(active)
+    const activeIncidents = state.incidents.filter(i => i.state !== 'RESOLVED')
+    const newestActive = activeIncidents[activeIncidents.length - 1] || null
+
+    if (manualSelect && selectedIncident) {
+      // Check if the manually selected one is still in the list
+      const stillExists = state.incidents.find(i => i.id === selectedIncident.id)
+      if (!stillExists) {
+        // Incident gone, revert to auto
+        setManualSelect(false)
+        setSelectedIncident(newestActive)
+      } else if (stillExists.state === 'RESOLVED' && newestActive) {
+        // The manually selected one resolved — jump to new active incident
+        setManualSelect(false)
+        setSelectedIncident(newestActive)
+      }
+      // Otherwise keep the manual selection
+    } else {
+      // Auto mode: always track the latest active incident
+      if (newestActive && newestActive.id !== selectedIncident?.id) {
+        setSelectedIncident(newestActive)
+      } else if (!newestActive && selectedIncident) {
+        // Nothing active anymore — keep showing the last one (resolved)
+        const updated = state.incidents.find(i => i.id === selectedIncident.id)
+        if (updated) setSelectedIncident(updated)
+      }
     }
   }, [state.incidents])
 
@@ -382,7 +406,7 @@ export default function App() {
           <IncidentsList
             incidents={state.incidents}
             selectedId={displayIncident?.id}
-            onSelect={(inc) => setSelectedIncident(inc)}
+            onSelect={(inc) => { setSelectedIncident(inc); setManualSelect(true) }}
           />
         </div>
 
