@@ -1702,3 +1702,42 @@ body {
   .lp-section { padding: 60px 20px; }
   .lp-hero-ctas { flex-direction: column; align-items: center; }
 }
+
+/* -- PDF Button ------------------------------------------------ */
+.il-header-hint {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+.il-item { position: relative; }
+.il-pdf-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  padding: 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0;
+}
+.il-item:hover .il-pdf-btn, .il-pdf-btn.loading {
+  opacity: 1;
+}
+.il-pdf-btn:hover {
+  color: var(--accent-blue);
+  background: rgba(77,126,255,0.1);
+  border-color: rgba(77,126,255,0.3);
+}
+.il-pdf-btn.loading {
+  color: var(--accent-amber);
+  animation: pulse 1s infinite;
+  pointer-events: none;
+}

@@ -5,7 +5,8 @@ import SimulatorControls from './components/SimulatorControls'
 import IncidentPanel from './components/IncidentPanel'
 import ReplayView from './components/ReplayView'
 import IntelligencePanel from './components/IntelligencePanel'
-import { subscribeToState, triggerScenario } from './lib/api'
+import { subscribeToState, triggerScenario, getIncident } from './lib/api'
+import { generateIncidentReport } from './lib/reportGenerator'
 
 const INITIAL_STATE = {
   metrics: {},
@@ -106,12 +107,36 @@ const SCENARIO_LABELS = {
   UNKNOWN: 'System Anomaly',
 }
 
+// Download SVG icon
+function DlIcon() {
+  return (
+    <svg width={11} height={11} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+    </svg>
+  )
+}
+
 function IncidentsList({ incidents, selectedId, onSelect }) {
+  const [downloading, setDownloading] = useState(null)
   if (!incidents || incidents.length === 0) return null
+
+  const handleDownload = async (e, inc) => {
+    e.stopPropagation()  // don't trigger onSelect
+    setDownloading(inc.id)
+    try {
+      const fullData = await getIncident(inc.id).catch(() => null)
+      await generateIncidentReport(inc, fullData)
+    } catch (err) {
+      console.error('PDF generation failed:', err)
+    }
+    setDownloading(null)
+  }
+
   return (
     <div className="incidents-history">
       <div className="incidents-history-header">
         <span className="incidents-history-title">Incident History ({incidents.length})</span>
+        <span className="il-header-hint">Click row to inspect &bull; PDF to download report</span>
       </div>
       <div className="incident-list">
         {incidents.slice().reverse().map(inc => {
@@ -132,6 +157,14 @@ function IncidentsList({ incidents, selectedId, onSelect }) {
               <span style={{ fontSize: 9, fontFamily: 'JetBrains Mono', color: '#4a5878', marginLeft: 4 }}>
                 {inc.state}
               </span>
+              <button
+                className={`il-pdf-btn ${downloading === inc.id ? 'loading' : ''}`}
+                onClick={(e) => handleDownload(e, inc)}
+                title="Download PDF report"
+                disabled={downloading === inc.id}
+              >
+                {downloading === inc.id ? '...' : <DlIcon />}
+              </button>
             </div>
           )
         })}
