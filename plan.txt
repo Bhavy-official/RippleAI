@@ -1,0 +1,1537 @@
+Absolutely. Since you're going to give this to **Antigravity/Codex as the engineering agent**, the prompt should not just say “build this project.” It should behave like a **technical product specification + implementation roadmap + progress tracker + guardrails**.
+
+I would use the following as the **MASTER PROMPT**. It incorporates the agreed feature set and explicitly separates the 5-hour MVP from future implementation. The core concept is based on the ideation we developed: real-time ingestion → sliding windows → adaptive baseline → multi-signal scoring → correlation → explainability → early warning → recovery. 
+
+---
+
+# MASTER PROMPT — Ripple Ai
+
+Copy everything below into **Antigravity/Codex**:
+
+```text
+You are the lead software architect, senior full-stack engineer, ML engineer, DevOps engineer, and UI/UX engineer for a hackathon project.
+
+Your job is to DESIGN AND BUILD the complete working MVP described below.
+
+IMPORTANT:
+- Do not blindly generate the entire project in one shot.
+- Work phase-by-phase.
+- After each phase, test the implementation.
+- Maintain a PROJECT_PROGRESS.md file.
+- Never move to the next phase until the current phase is working.
+- Prefer a simple, reliable implementation over unnecessary complexity.
+- This is a hackathon project with approximately 5 hours of implementation time.
+- We are using AI-assisted development, so you should generate the code, run it, test it, debug it, and keep the project runnable after every phase.
+- Do not over-engineer.
+- Do not introduce technologies that are unnecessary for the MVP.
+- If a feature is too complex for the available time, implement a convincing deterministic/simulated MVP version and document the production-grade future implementation.
+
+==================================================
+1. PROJECT NAME
+==================================================
+
+Ripple Ai
+
+Tagline:
+
+"Detect the signal before it becomes the incident."
+
+Project category:
+
+Real-Time Log Anomaly Detection + Incident Intelligence Platform
+
+==================================================
+2. PROBLEM STATEMENT
+==================================================
+
+The system monitors a continuously growing log stream and identifies abnormal behavior in real time.
+
+The basic problem requires:
+
+1. Monitoring a continuously growing log file.
+2. Calculating rolling error rates using a sliding window.
+3. Establishing a baseline for normal behavior.
+4. Detecting deviations from that baseline.
+5. Assigning severity levels.
+6. Providing a real-time frontend using WebSockets or polling.
+7. Displaying alerts as they are generated.
+8. Pushing alerts to AWS CloudWatch Logs or SNS.
+
+However, Ripple Ai must go beyond being a basic threshold-based log monitor.
+
+The goal is to create an "Incident Intelligence" layer on top of real-time anomaly detection.
+
+The system should answer:
+
+- What is happening?
+- Is it actually abnormal?
+- How abnormal is it?
+- Why is it abnormal?
+- Which errors belong to the same incident?
+- What services/endpoints are affected?
+- Is the incident getting worse?
+- Has the system recovered?
+- What should an engineer investigate?
+
+==================================================
+3. CORE PRODUCT CONCEPT
+==================================================
+
+Ripple Ai transforms noisy real-time logs into actionable incidents.
+
+High-level pipeline:
+
+LOG STREAM
+    ↓
+REAL-TIME INGESTION
+    ↓
+PARSING + NORMALIZATION
+    ↓
+SLIDING WINDOW
+    ↓
+FEATURE EXTRACTION
+    ↓
+ADAPTIVE BASELINE
+    ↓
+MULTI-SIGNAL ANOMALY SCORING
+    ↓
+ERROR FINGERPRINTING
+    ↓
+INCIDENT CORRELATION
+    ↓
+SEVERITY
+    ↓
+EARLY WARNING / RECOVERY
+    ↓
+BLAST RADIUS
+    ↓
+EXPLAINABLE INCIDENT
+    ↓
+REAL-TIME DASHBOARD
+    ↓
+AWS CLOUDWATCH / SNS
+
+==================================================
+4. CORE PRODUCT PHILOSOPHY
+==================================================
+
+Do NOT build:
+
+"another log dashboard."
+
+Build:
+
+"an intelligent real-time incident detection and early-warning platform."
+
+The system must distinguish between:
+
+RAW EVENTS
+    ↓
+ANOMALOUS SIGNALS
+    ↓
+CORRELATED INCIDENT
+    ↓
+ACTIONABLE EXPLANATION
+
+Example:
+
+Instead of showing:
+
+ERROR
+ERROR
+ERROR
+ERROR
+ERROR
+ERROR
+
+show:
+
+------------------------------------------------
+INCIDENT #1042
+Possible Database Connectivity Failure
+
+Severity: CRITICAL
+Anomaly Score: 94/100
+Confidence: 91%
+
+Related signals:
+- DBConnectionTimeout
+- HTTP 500 spike
+- P95 latency spike
+- Checkout failure increase
+
+Affected:
+- Payment API: 82%
+- Checkout: 61%
+- Cart: 29%
+
+Status:
+CRITICAL → RECOVERING → RESOLVED
+------------------------------------------------
+
+==================================================
+5. MVP TECHNOLOGY STACK
+==================================================
+
+Use the simplest reliable architecture.
+
+Backend:
+- Python
+- FastAPI
+- asyncio
+- WebSockets
+- collections.deque
+- statistics / NumPy where useful
+- pandas only if genuinely useful
+- boto3 for AWS integration
+
+Frontend:
+- React
+- Vite
+- Tailwind CSS
+- Recharts
+- WebSocket client
+
+Data:
+- For MVP, avoid unnecessary databases.
+- Use in-memory state / JSON where sufficient.
+- Persistent database can be future work.
+
+Detection:
+- Sliding window
+- Moving average
+- Standard deviation
+- Z-score/deviation
+- Trend/slope
+- Novel error detection
+- Weighted anomaly score
+
+AWS:
+- CloudWatch Logs and/or SNS
+- Keep integration minimal and reliable.
+
+AI:
+- AI/LLM may be used for human-readable incident explanation.
+- DO NOT use an LLM as the primary anomaly detector.
+- Detection must remain deterministic/statistical and explainable.
+- If no API key is available, provide a deterministic fallback explanation generator.
+
+==================================================
+6. EVENT DATA MODEL
+==================================================
+
+Use a normalized event format similar to:
+
+{
+  "timestamp": "...",
+  "service": "payment-api",
+  "endpoint": "/checkout",
+  "status": 500,
+  "latency_ms": 1840,
+  "level": "ERROR",
+  "message": "DBConnectionTimeout"
+}
+
+The architecture must support:
+
+- timestamp
+- service
+- endpoint
+- HTTP status
+- latency
+- log level
+- message
+- optional IP
+- optional request ID
+- optional deployment ID
+- optional metadata
+
+==================================================
+7. REAL-TIME LOG INGESTION
+==================================================
+
+Implement a continuously growing log source.
+
+The system must support:
+
+A. Real log file
+
+Example:
+
+app.log
+
+The application should detect newly appended lines without repeatedly rereading the entire file.
+
+B. Log simulator
+
+This is extremely important for the hackathon demo.
+
+Provide scenario controls:
+
+[ NORMAL TRAFFIC ]
+[ ERROR SPIKE ]
+[ TRAFFIC SURGE ]
+[ DATABASE FAILURE ]
+[ LATENCY SPIKE ]
+[ SECURITY ANOMALY ]
+[ RECOVERY ]
+
+The simulator should generate realistic events and append them to the same ingestion pipeline.
+
+Do NOT create a separate fake frontend-only simulation.
+
+The simulator must pass through the actual backend detection engine.
+
+==================================================
+8. SLIDING WINDOW ENGINE
+==================================================
+
+Implement configurable windows.
+
+Default:
+
+60 seconds
+
+Allow:
+
+10 sec
+30 sec
+60 sec
+5 min
+
+Use an efficient structure such as deque.
+
+For each active window calculate:
+
+- total_requests
+- error_requests
+- error_rate
+- warning_rate
+- average_latency
+- p95_latency
+- requests_per_second
+- unique_error_types
+- service distribution
+- endpoint distribution
+- status distribution
+
+The system must continuously update these metrics as new events arrive.
+
+==================================================
+9. ADAPTIVE BASELINE
+==================================================
+
+Do NOT use:
+
+if error_rate > 10%:
+    anomaly
+
+Instead establish a baseline for expected behavior.
+
+Initial MVP baseline:
+
+- moving average
+- moving standard deviation
+- rolling historical values
+
+Where possible, baseline should consider:
+
+- service
+- hour of day
+- day of week
+
+Example:
+
+Payment API
+Monday 10 AM:
+Expected error rate = 1.4%
+
+Current:
+8.9%
+
+Deviation:
++535%
+
+The baseline must be configurable.
+
+If insufficient historical data exists, gracefully fall back to a global/service baseline.
+
+Never allow division-by-zero or unstable standard deviations to crash detection.
+
+==================================================
+10. MULTI-SIGNAL ANOMALY SCORE
+==================================================
+
+Create an anomaly score from 0 to 100.
+
+The score should combine signals such as:
+
+- error-rate deviation
+- traffic deviation
+- latency deviation
+- new-error novelty
+- growth velocity
+
+Initial configurable weighting:
+
+40% error-rate deviation
+20% traffic deviation
+20% latency deviation
+10% new-error novelty
+10% growth velocity
+
+DO NOT hardcode these weights throughout the code.
+
+Create a configuration object.
+
+Example output:
+
+Anomaly Score: 94/100
+
+Breakdown:
+
+Error deviation       +36
+Traffic deviation     +14
+Latency deviation     +20
+Novelty               +10
+Velocity               +9
+
+The exact scoring formula should be documented.
+
+==================================================
+11. SEVERITY ENGINE
+==================================================
+
+Create configurable severity levels:
+
+NORMAL
+WATCH
+WARNING
+CRITICAL
+EMERGENCY
+
+Severity must be explainable.
+
+Do not simply say:
+
+"Severity = CRITICAL"
+
+Instead expose:
+
+CRITICAL because:
+
+- error rate +740%
+- latency +510%
+- new error signature detected
+- rapid growth
+- multiple endpoints affected
+
+Thresholds must be configurable.
+
+==================================================
+12. NEW ERROR FINGERPRINTING
+==================================================
+
+Detect new/unseen error signatures.
+
+Example:
+
+RedisConnectionResetError
+
+Historical frequency:
+0
+
+Current occurrences:
+34
+
+Novelty:
+100%
+
+Normalize variable values.
+
+Example:
+
+User 123 failed
+User 456 failed
+User 789 failed
+
+should normalize conceptually to:
+
+User <*> failed
+
+Create a reusable fingerprinting/normalization utility.
+
+==================================================
+13. INCIDENT CORRELATION
+==================================================
+
+This is one of the most important differentiating features.
+
+Do NOT generate an independent incident for every anomalous event.
+
+Correlate related anomalies occurring close together.
+
+Example:
+
+DBConnectionTimeout
+    ↓
+HTTP 500 increase
+    ↓
+Latency spike
+    ↓
+Checkout failure
+    ↓
+Payment failure
+
+should become:
+
+INCIDENT #1042
+
+Possible Database Connectivity Failure
+
+Related signals:
+- DBConnectionTimeout
+- HTTP 500 surge
+- latency spike
+- checkout failures
+
+The correlation logic can initially use:
+
+- time proximity
+- service
+- endpoint
+- error fingerprint
+- metric relationship
+
+Create an incident object with:
+
+- incident ID
+- start time
+- latest update
+- severity
+- anomaly score
+- confidence
+- related events
+- affected services
+- affected endpoints
+- current state
+- timeline
+
+==================================================
+14. BLAST RADIUS
+==================================================
+
+For each incident determine the affected services/endpoints.
+
+Example:
+
+Payment API       82%
+Checkout          61%
+Cart              29%
+Login              3%
+
+Also show:
+
+Affected requests
+Affected endpoints
+Affected services
+
+For the MVP, these values can be calculated from the incoming event distribution.
+
+==================================================
+15. EARLY WARNING
+==================================================
+
+Do not wait until the system becomes critically abnormal.
+
+Analyze trend/velocity.
+
+Example:
+
+Error rate:
+
+2%
+3%
+4%
+6%
+9%
+13%
+
+The system should detect accelerating degradation and show:
+
+EARLY WARNING
+
+"Error rate is accelerating abnormally."
+
+Then:
+
+"Critical threshold may be crossed soon."
+
+IMPORTANT:
+
+Do not falsely claim advanced predictive ML.
+
+For MVP, use trend/slope-based forecasting.
+
+==================================================
+16. RECOVERY DETECTION
+==================================================
+
+Detect when metrics return toward baseline.
+
+Lifecycle:
+
+NORMAL
+↓
+WATCH
+↓
+WARNING
+↓
+CRITICAL
+↓
+RECOVERING
+↓
+RESOLVED
+
+When resolved, store:
+
+- duration
+- peak anomaly score
+- peak error rate
+- affected requests
+- affected services
+- timeline
+
+==================================================
+17. INCIDENT TIMELINE
+==================================================
+
+Every incident should have a timeline.
+
+Example:
+
+12:41:10  NORMAL
+12:41:27  Error rate begins rising
+12:41:31  New DB timeout detected
+12:41:37  Latency anomaly
+12:41:42  CRITICAL INCIDENT
+12:41:48  Checkout failures spike
+12:42:11  Recovery begins
+12:42:30  INCIDENT RESOLVED
+
+This timeline must be generated from actual backend events.
+
+==================================================
+18. INCIDENT REPLAY
+==================================================
+
+Create a Replay screen.
+
+After an incident occurs, allow:
+
+[ REPLAY INCIDENT ]
+
+The UI should replay the stored incident timeline.
+
+Example:
+
+Normal
+↓
+First anomaly
+↓
+Error fingerprint
+↓
+Severity escalation
+↓
+Incident correlation
+↓
+Recovery
+
+Replay can be accelerated for the demo.
+
+==================================================
+19. EXPLAINABLE ALERT
+==================================================
+
+Every significant anomaly/incident must have a "WHY?" section.
+
+Example:
+
+WHY THIS INCIDENT WAS DETECTED
+
+- Error rate increased from 1.7% → 14.8%
+- Current rate is 8.7× baseline
+- P95 latency increased from 240ms → 1.8s
+- New DBConnectionTimeout signature detected
+- 83% of affected requests hit /checkout
+- Growth velocity is HIGH
+
+This explanation must be based on actual calculated backend values.
+
+Do not fabricate metrics in the frontend.
+
+==================================================
+20. AI INCIDENT EXPLANATION
+==================================================
+
+AI is an enhancement, NOT the anomaly detector.
+
+Pipeline:
+
+Detection Engine
+↓
+Structured Incident
+↓
+LLM
+↓
+Human-readable explanation
+
+The LLM receives only structured evidence.
+
+Example input:
+
+{
+  "error_rate": 14.8,
+  "baseline_error_rate": 1.7,
+  "latency": 1800,
+  "baseline_latency": 240,
+  "new_errors": ["DBConnectionTimeout"],
+  "affected_endpoint": "/checkout"
+}
+
+Expected output:
+
+"Checkout requests are experiencing elevated failures primarily associated with database connection timeouts. Error rate is significantly above the learned baseline and latency has increased substantially."
+
+If LLM credentials are unavailable:
+
+Use a deterministic template-based explanation.
+
+The application MUST continue functioning without an LLM API.
+
+==================================================
+21. REAL-TIME FRONTEND
+==================================================
+
+Use WebSockets.
+
+The frontend should update without page refresh.
+
+Create three primary screens.
+
+SCREEN 1:
+COMMAND CENTER
+
+Show:
+
+- system status
+- live request rate
+- live error rate
+- P95 latency
+- anomaly score
+- active incidents
+- live anomaly chart
+- service health
+- alert feed
+- simulator controls
+
+SCREEN 2:
+INCIDENT DETAILS
+
+Show:
+
+- incident ID
+- severity
+- anomaly score
+- confidence
+- timeline
+- why detected
+- baseline comparison
+- error fingerprint
+- affected services
+- affected endpoints
+- blast radius
+- related events
+- current state
+
+SCREEN 3:
+INCIDENT REPLAY
+
+Show:
+
+- incident timeline
+- replay controls
+- event progression
+- metric progression
+- severity progression
+- resolution
+
+==================================================
+22. UI/UX REQUIREMENTS
+==================================================
+
+The UI should feel like a professional observability platform.
+
+Design principles:
+
+- dark operations-center aesthetic
+- clean typography
+- strong hierarchy
+- real-time indicators
+- subtle animations
+- readable charts
+- clear severity states
+- no unnecessary decorative elements
+- responsive layout
+
+Important:
+
+Do NOT build a generic admin dashboard.
+
+It should visually communicate:
+
+LIVE
+DETECTING
+ANOMALY
+INCIDENT
+RECOVERING
+RESOLVED
+
+The dashboard must be understandable within 10 seconds by a judge.
+
+==================================================
+23. AWS INTEGRATION
+==================================================
+
+Implement the required AWS integration.
+
+Primary goal:
+
+Push processed logs/alerts to:
+
+AWS CloudWatch Logs
+
+Optionally:
+
+AWS SNS
+
+Keep this integration isolated in an AWS adapter/service.
+
+The application must work locally even if AWS credentials are unavailable.
+
+Use environment variables.
+
+Never hardcode:
+
+- AWS credentials
+- API keys
+- secrets
+
+If AWS configuration is missing:
+
+Display:
+
+"AWS integration not configured — running in local demo mode."
+
+Do not crash the application.
+
+==================================================
+24. FUTURE FEATURES
+==================================================
+
+DO NOT fully implement these during the 5-hour MVP unless the entire MVP is already stable.
+
+However, design the architecture so they can be added later.
+
+FUTURE 1:
+AI Incident Investigation
+
+Natural language questions:
+
+"Why did checkout fail?"
+
+"What changed before this incident?"
+
+"What services are affected?"
+
+FUTURE 2:
+Root-Cause Dependency Graph
+
+Real service dependency mapping.
+
+Example:
+
+Database
+ ↓
+Payment API
+ ↓
+Checkout
+ ↓
+Cart
+
+FUTURE 3:
+Deployment/Change Correlation
+
+Correlate incidents with:
+
+- deployments
+- configuration changes
+- infrastructure changes
+
+Example:
+
+Deployment v1.8
+↓
+37 seconds
+↓
+latency increase
+↓
+DB timeout
+↓
+incident
+
+FUTURE 4:
+Business Impact Estimation
+
+Estimate:
+
+- failed transactions
+- affected customers
+- revenue impact
+- business capability affected
+
+FUTURE 5:
+Self-Healing / Auto-Remediation
+
+Potential actions:
+
+- restart service
+- rollback deployment
+- scale service
+- reset connection pool
+
+Must use approval/safety mechanisms in production.
+
+FUTURE 6:
+Advanced Security Analytics
+
+Detect:
+
+- repeated authentication failures
+- suspicious IP behavior
+- unusual endpoint access
+- credential abuse
+- abnormal request patterns
+
+FUTURE 7:
+Human Feedback Loop
+
+Engineer can mark:
+
+TRUE POSITIVE
+FALSE POSITIVE
+EXPECTED BEHAVIOR
+
+Use this feedback to improve future detection.
+
+FUTURE 8:
+Advanced ML
+
+Possible future models:
+
+- Isolation Forest
+- autoencoders
+- advanced time-series forecasting
+- learned anomaly representations
+
+Do NOT replace the explainable statistical MVP with unnecessary ML.
+
+FUTURE 9:
+Enterprise-scale architecture
+
+Potential technologies:
+
+- Kafka
+- Redis Streams
+- Kubernetes
+- distributed workers
+- OpenSearch/Elasticsearch
+- PostgreSQL
+
+Only introduce these when scale requires them.
+
+FUTURE 10:
+Enterprise authentication
+
+- RBAC
+- SSO
+- audit logs
+- secrets management
+
+FUTURE 11:
+Persistent incident history
+
+Store:
+
+- incidents
+- fingerprints
+- baselines
+- historical metrics
+- resolution history
+
+Possible technologies:
+
+PostgreSQL
+OpenSearch/Elasticsearch
+
+FUTURE 12:
+Anomaly DNA
+
+Create a long-term incident fingerprint.
+
+Example:
+
+ANOMALY DNA
+
+Type:
+Application + Dependency
+
+Pattern:
+Error spike → latency spike → endpoint concentration
+
+Novelty:
+87%
+
+Velocity:
+HIGH
+
+Blast Radius:
+MEDIUM
+
+Likely dependency:
+Database
+
+Confidence:
+91%
+
+FUTURE 13:
+Digital Twin / What-if Simulation
+
+Example:
+
+"What happens if DB latency doubles?"
+
+Simulate:
+
+DB latency +100%
+↓
+Payment latency +61%
+↓
+Timeouts +43%
+↓
+Checkout failures +28%
+
+FUTURE 14:
+Autonomous Incident Response
+
+Eventually allow an AI agent to:
+
+- investigate
+- collect evidence
+- propose remediation
+- request approval
+- execute approved action
+- verify recovery
+
+This is future architecture, NOT part of the 5-hour MVP.
+
+==================================================
+25. WHAT NOT TO DO
+==================================================
+
+Do NOT:
+
+- build microservices unnecessarily
+- use Kubernetes for the MVP
+- add Kafka unless absolutely necessary
+- build a complex database
+- train a deep learning model
+- send every log to an LLM
+- build complicated authentication
+- create unnecessary APIs
+- over-engineer AWS
+- create 15 frontend pages
+- sacrifice reliability for features
+
+The goal is:
+
+WORKING + EXPLAINABLE + IMPRESSIVE
+
+not:
+
+COMPLEX + HALF-BROKEN.
+
+==================================================
+26. MVP PRIORITY ORDER
+==================================================
+
+P0 — MUST WORK
+
+1. Real-time log ingestion
+2. Log simulator
+3. Sliding-window metrics
+4. Adaptive baseline
+5. Multi-signal anomaly score
+6. Severity engine
+7. Incident correlation
+8. Explainable alert
+9. WebSocket dashboard
+10. AWS CloudWatch/SNS integration
+
+P1 — BUILD IF P0 IS STABLE
+
+11. New error fingerprinting
+12. Blast radius
+13. Early warning
+14. Incident timeline
+15. Recovery detection
+16. Incident replay
+
+P2 — OPTIONAL
+
+17. AI incident explanation
+18. Deployment correlation
+19. Root-cause visualization
+20. Business impact estimation
+
+P3 — FUTURE
+
+21. Self-healing
+22. Advanced security analytics
+23. Human feedback learning
+24. Advanced ML
+25. Enterprise architecture
+26. Enterprise authentication
+27. Persistent incident intelligence
+28. Anomaly DNA knowledge base
+29. Digital twin
+30. Autonomous incident response
+
+==================================================
+27. FIVE-HOUR IMPLEMENTATION PLAN
+==================================================
+
+PHASE 0 — PLANNING
+Target: 10 minutes
+
+Tasks:
+- inspect repository
+- create architecture
+- create PROJECT_PROGRESS.md
+- create TODO.md
+- create .env.example
+- establish folder structure
+
+Do not build features yet.
+
+--------------------------------------------------
+
+PHASE 1 — DATA + INGESTION
+Target: 30 minutes
+
+Implement:
+
+- log schema
+- parser
+- normalizer
+- growing log watcher
+- scenario simulator
+
+Scenarios:
+
+NORMAL
+ERROR_SPIKE
+TRAFFIC_SURGE
+DATABASE_FAILURE
+LATENCY_SPIKE
+SECURITY_ANOMALY
+RECOVERY
+
+Acceptance test:
+
+Starting a scenario produces actual log events consumed by the backend.
+
+--------------------------------------------------
+
+PHASE 2 — DETECTION ENGINE
+Target: 60 minutes
+
+Implement:
+
+- sliding window
+- rolling metrics
+- baseline
+- anomaly score
+- severity
+- error fingerprinting
+
+Acceptance test:
+
+Normal traffic produces low scores.
+
+Injected failure produces high score.
+
+--------------------------------------------------
+
+PHASE 3 — INCIDENT INTELLIGENCE
+Target: 45 minutes
+
+Implement:
+
+- incident correlation
+- incident lifecycle
+- blast radius
+- explainable alert
+- timeline
+- early warning
+- recovery detection
+
+Acceptance test:
+
+One database failure should produce ONE correlated incident rather than many unrelated alerts.
+
+--------------------------------------------------
+
+PHASE 4 — REAL-TIME FRONTEND
+Target: 60 minutes
+
+Implement:
+
+- React dashboard
+- WebSocket connection
+- Command Center
+- Incident Details
+- live charts
+- active alerts
+- simulator controls
+
+Acceptance test:
+
+Clicking DATABASE FAILURE visibly changes the dashboard in real time.
+
+--------------------------------------------------
+
+PHASE 5 — REPLAY + AWS
+Target: 30 minutes
+
+Implement:
+
+- incident storage for replay
+- replay UI
+- CloudWatch adapter
+- SNS adapter if time permits
+
+Acceptance test:
+
+An incident can be replayed after it finishes.
+
+AWS failure must NOT crash the local app.
+
+--------------------------------------------------
+
+PHASE 6 — POLISH + TEST
+Target: 45 minutes
+
+Test:
+
+- normal traffic
+- error spike
+- database failure
+- latency spike
+- traffic surge
+- security scenario
+- recovery
+- WebSocket reconnect
+- malformed logs
+- empty logs
+- missing AWS credentials
+- baseline with insufficient history
+
+Fix all critical errors.
+
+Do not add major new features during this phase.
+
+==================================================
+28. PROGRESS TRACKING
+==================================================
+
+Create:
+
+PROJECT_PROGRESS.md
+
+Use this exact format:
+
+# Ripple Ai Progress
+
+## Overall
+[ ] Project setup
+[ ] Phase 1
+[ ] Phase 2
+[ ] Phase 3
+[ ] Phase 4
+[ ] Phase 5
+[ ] Phase 6
+
+## P0
+- [ ] Log ingestion
+- [ ] Simulator
+- [ ] Sliding window
+- [ ] Adaptive baseline
+- [ ] Multi-signal scoring
+- [ ] Severity
+- [ ] Incident correlation
+- [ ] Explainable alerts
+- [ ] WebSocket dashboard
+- [ ] AWS integration
+
+## P1
+- [ ] Error fingerprinting
+- [ ] Blast radius
+- [ ] Early warning
+- [ ] Incident timeline
+- [ ] Recovery detection
+- [ ] Incident replay
+
+## P2
+- [ ] AI explanation
+- [ ] Deployment correlation
+- [ ] Root-cause visualization
+- [ ] Business impact
+
+## Future
+- [ ] Self-healing
+- [ ] Security analytics
+- [ ] Feedback learning
+- [ ] Advanced ML
+- [ ] Enterprise architecture
+- [ ] Authentication
+- [ ] Persistent history
+- [ ] Anomaly DNA
+- [ ] Digital twin
+- [ ] Autonomous response
+
+## Current Phase
+...
+
+## Last Completed Task
+...
+
+## Current Blocker
+...
+
+## Next Task
+...
+
+## Test Status
+...
+
+Every time you finish a task:
+
+1. update PROJECT_PROGRESS.md
+2. run the relevant tests
+3. record failures
+4. fix failures
+5. only then move forward
+
+==================================================
+29. ENGINEERING RULES
+==================================================
+
+1. Keep code modular.
+2. Separate ingestion from detection.
+3. Separate detection from incident correlation.
+4. Separate backend logic from frontend presentation.
+5. Keep scoring weights configurable.
+6. Keep thresholds configurable.
+7. Use environment variables for secrets.
+8. Never hardcode credentials.
+9. Use type hints where appropriate.
+10. Add useful error handling.
+11. Avoid unnecessary dependencies.
+12. Do not duplicate logic.
+13. Do not fake backend metrics in the frontend.
+14. All displayed metrics should originate from backend calculations.
+15. The simulator must use the same ingestion/detection pipeline as real logs.
+16. AI must not be the source of truth for anomaly detection.
+17. The system must remain functional without an AI API.
+18. The system must remain functional without AWS credentials.
+19. Prefer deterministic logic for the hackathon MVP.
+20. Every major feature must have an acceptance test.
+
+==================================================
+30. DEMO REQUIREMENT
+==================================================
+
+The final application must support this exact demo flow:
+
+START:
+
+System status:
+🟢 NORMAL
+
+Live metrics are moving.
+
+Judge is shown:
+
+- request rate
+- error rate
+- latency
+- baseline
+- anomaly score
+
+Then trigger:
+
+DATABASE FAILURE
+
+System should show:
+
+1. Error rate starts increasing.
+2. Latency increases.
+3. New DB error fingerprint appears.
+4. Early warning appears.
+5. Anomaly score increases.
+6. Severity changes:
+   NORMAL → WARNING → CRITICAL
+7. Multiple related alerts appear.
+8. Incident correlator groups them.
+9. One incident is created.
+10. Blast radius appears.
+11. Why panel explains the incident.
+12. Timeline updates.
+13. Recovery scenario is triggered.
+14. Metrics return toward baseline.
+15. Incident changes:
+   CRITICAL → RECOVERING → RESOLVED
+16. Incident can be replayed.
+
+The entire flow must work without manually editing data during the demo.
+
+==================================================
+31. FINAL PRODUCT POSITIONING
+==================================================
+
+Do NOT describe the project as:
+
+"We built a sliding-window log anomaly detector."
+
+Describe it as:
+
+"Ripple Ai is a real-time incident intelligence platform that detects abnormal behavior early, learns service-specific baselines, correlates noisy signals into a single incident, explains why the incident occurred, shows its blast radius, predicts escalation, and tracks recovery."
+
+Short pitch:
+
+"Most monitoring systems tell you something broke. Ripple Ai detects the signal before the incident, understands how the signals are related, explains what changed, and shows how the system recovers."
+
+==================================================
+32. FINAL INSTRUCTION TO THE AI CODING AGENT
+==================================================
+
+Start with PHASE 0.
+
+Do NOT immediately build everything.
+
+First:
+
+1. Inspect the repository.
+2. Determine the current state.
+3. Create the architecture.
+4. Create PROJECT_PROGRESS.md.
+5. Create TODO.md.
+6. Create the initial folder structure.
+7. Tell me what you created.
+8. Then wait for approval before beginning Phase 1.
+
+When implementing each phase:
+
+- explain what you are about to build
+- implement it
+- run it
+- test it
+- fix errors
+- update PROJECT_PROGRESS.md
+- report what passed
+- report what remains
+
+Never mark a feature complete merely because code was generated.
+
+A feature is COMPLETE only when:
+- code exists
+- application runs
+- feature is connected
+- expected behavior is tested
+- no known blocking error exists
+
+Prioritize a reliable working MVP over feature count.
+
+BEGIN WITH PHASE 0.
+```
+
+## One important change I'd make while using this
+
+Don't paste the master prompt and then let Antigravity run for hours autonomously.
+
+Use the prompt's **phase gates**.
+
+After it finishes Phase 0, tell it:
+
+> **Proceed to Phase 1. Follow the specification exactly. Do not implement future features. At the end, run the Phase 1 acceptance tests and update PROJECT_PROGRESS.md.**
+
+Then:
+
+> **Proceed to Phase 2...**
+
+And so on.
+
+That prevents the classic AI-coding failure mode where it spends 40 minutes building a beautiful frontend before the anomaly engine even works.
+
+### Your 5-hour priority hierarchy
+
+```text
+                    Ripple Ai
+                         │
+                ┌────────┴────────┐
+                │                 │
+             DETECT            PRESENT
+                │                 │
+       ┌────────┼────────┐       UI
+       │        │        │        │
+    Baseline  Score   Fingerprint Charts
+       │        │        │        │
+       └────────┼────────┘        │
+                ↓                 │
+           CORRELATION ←──────────┘
+                ↓
+             INCIDENT
+                ↓
+       ┌────────┼─────────┐
+       ↓        ↓         ↓
+    Explain  Blast     Timeline
+             Radius
+       │
+       ↓
+    Predict
+       │
+       ↓
+    Recover
+       │
+       ↓
+    Replay
+```
+
+**If time starts running out, never cut the middle of this pipeline.** Cut optional UI polish, AI explanation, AWS extras, or future-facing functionality first.
+
+And the most important architectural decision in the prompt is this:
+
+> **Statistics/rules detect the anomaly → correlation creates the incident → AI explains the evidence.**
+
+That keeps Ripple Ai technically credible instead of becoming another “send logs to an LLM” project.
