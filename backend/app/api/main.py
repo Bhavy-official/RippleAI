@@ -43,7 +43,7 @@ class RippleRuntime:
 
     async def _process(self, event: LogEvent) -> None:
         self.latest = self.detector.process(event)
-        incident = self.incidents.observe(event, self.latest)
+        incident = self.incidents.observe(event, self.latest, self.current_scenario.value)
         if incident and incident.id not in self._published_incidents:
             self._published_incidents.add(incident.id)
             await self.aws.publish(incident.to_dict())

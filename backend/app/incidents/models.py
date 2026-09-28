@@ -44,6 +44,7 @@ class Incident:
     explanation: list[str] = field(default_factory=list)
     breakdown: dict[str, float] = field(default_factory=dict)
     peak_p95_latency: float = 0.0
+    scenario_type: str = "UNKNOWN"  # scenario that triggered this incident
 
     def to_dict(self) -> dict:
         return {
@@ -55,4 +56,5 @@ class Incident:
             "peak_error_rate": self.peak_error_rate, "peak_p95_latency": self.peak_p95_latency,
             "timeline": [entry.to_dict() for entry in self.timeline],
             "explanation": self.explanation, "breakdown": self.breakdown,
+            "scenario_type": self.scenario_type,
         }

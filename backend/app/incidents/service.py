@@ -19,10 +19,10 @@ class IncidentService:
         # At 0.12–0.2s per tick this gives ~2 seconds of recovery — enough for
         # judges to read the incident panel before it disappears.
         self.recovery_observations = recovery_observations
-        self._incidents: list[Incident] = []\
-        
+        self._incidents: list[Incident] = []
         self._next_id = 1001
         self._recovery_counts: dict[int, int] = {}
+        self._current_scenario: str = "UNKNOWN"
 
     @property
     def incidents(self) -> list[Incident]:
@@ -32,11 +32,12 @@ class IncidentService:
     def active_incidents(self) -> list[Incident]:
         return [item for item in self._incidents if item.state != IncidentState.RESOLVED]
 
-    def observe(self, event: LogEvent, result: DetectionResult) -> Incident | None:
+    def observe(self, event: LogEvent, result: DetectionResult, scenario_type: str = "UNKNOWN") -> Incident | None:
+        self._current_scenario = scenario_type  # track for correlator
         incident = self._correlate(event, result)
         if result.score >= self.activation_score:
             if incident is None:
-                incident = self._create(event, result)
+                incident = self._create(event, result, scenario_type)
             else:
                 self._update(incident, event, result)
             return incident
@@ -47,51 +48,47 @@ class IncidentService:
 
     def _correlate(self, event: LogEvent, result: DetectionResult) -> Incident | None:
         """
-        Find an existing active incident to attach this event to.
+        Find an existing ACTIVE incident to attach this event to.
 
-        Priority:
-        1. Same service AND anomaly score is elevated (score >= activation / 2).
-           This merges DB-failure events from payment-api into one incident even
-           if the fingerprints differ per event.
-        2. Matching error fingerprint across any service.
-        3. Same endpoint.
-
-        Only one incident is created per scenario burst, even if multiple services
-        are affected simultaneously.
+        Rules:
+        - NEVER merge into a RECOVERING incident — that lets it finish resolving
+          while the new scenario creates its own fresh incident.
+        - Only merge when same service OR same endpoint AND same scenario.
+        - Drop the blind "attach to newest active" fallback that was swallowing
+          all scenario events into the first incident ever created.
         """
-        active = self.active_incidents
-        if not active:
+        # Only consider truly ACTIVE (not RECOVERING, not RESOLVED) incidents
+        truly_active = [i for i in self._incidents if i.state == IncidentState.ACTIVE]
+        if not truly_active:
             return None
 
         fingerprint_matches = set(result.novel_errors)
 
-        # If score is elevated, prefer the newest active incident regardless of service.
-        # This ensures one Database Failure = one incident, not three.
-        if result.score >= self.activation_score / 2 and active:
-            # Prefer an incident that shares service or endpoint
-            for incident in reversed(active):
-                same_service = event.service in incident.affected_services
-                same_endpoint = event.endpoint in incident.affected_endpoints
-                related_error = bool(fingerprint_matches & incident.related_fingerprints)
-                if same_service or same_endpoint or related_error:
-                    return incident
-            # Fallback: attach to the most recent active incident during a high-score burst
-            return active[-1]
-
-        # Low-score events: only correlate if there's a direct match
-        for incident in reversed(active):
+        # Correlate: same scenario type + (same service or same endpoint or related error)
+        for incident in reversed(truly_active):
+            same_scenario = incident.scenario_type == self._current_scenario
             same_service = event.service in incident.affected_services
-            related_error = bool(fingerprint_matches & incident.related_fingerprints)
             same_endpoint = event.endpoint in incident.affected_endpoints
-            if same_service or same_endpoint or related_error:
+            related_error = bool(fingerprint_matches & incident.related_fingerprints)
+            if same_scenario and (same_service or same_endpoint or related_error):
                 return incident
+
+        # If score is truly extreme (>= 70), merge into any active incident to avoid
+        # explosion of tiny incidents during a massive burst
+        if result.score >= 70:
+            for incident in reversed(truly_active):
+                same_service = event.service in incident.affected_services
+                if same_service:
+                    return incident
+
         return None
 
-    def _create(self, event: LogEvent, result: DetectionResult) -> Incident:
+    def _create(self, event: LogEvent, result: DetectionResult, scenario_type: str = "UNKNOWN") -> Incident:
         incident = Incident(
             self._next_id, event.timestamp, event.timestamp, result.severity, result.score,
             _confidence(result), IncidentState.ACTIVE, peak_score=result.score,
             peak_error_rate=result.metrics.error_rate,
+            scenario_type=scenario_type,
         )
         self._next_id += 1
         incident.timeline.append(TimelineEntry(
