@@ -1164,3 +1164,64 @@ body {
   .app-header { flex-wrap: wrap; gap: 12px; }
   .replay-stage { grid-template-columns: 1fr; }
 }
+
+/* -- UI Polish: professional chips & indicators ------------------ */
+.intel-status-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--accent-amber);
+  background: rgba(245,158,11,0.1);
+  border: 1px solid rgba(245,158,11,0.3);
+  padding: 4px 10px;
+  border-radius: 4px;
+}
+.intel-idle-note {
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: var(--bg-void);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+.incident-count-badge {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  letter-spacing: 1.5px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.incident-count-badge::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+}
+.incident-count-badge.has-incidents {
+  border-color: rgba(239,68,68,0.5);
+  color: #fca5a5;
+  background: rgba(239,68,68,0.08);
+  animation: pulse-border 1.6s ease-in-out infinite;
+}
+.incident-count-badge.has-incidents::before {
+  background: #ef4444;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(239,68,68,0.5); }
+  50%       { border-color: rgba(239,68,68,0.9); }
+}
+.brand-icon svg { display: block; }
+.intel-btn { display: flex; align-items: center; gap: 6px; }
+.replay-btn { display: flex; align-items: center; gap: 7px; }

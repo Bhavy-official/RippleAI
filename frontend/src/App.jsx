@@ -37,12 +37,24 @@ const BD_LABELS = {
   growth_velocity: 'Velocity',
 }
 
+// Small inline SVG for banners
+function BannerIcon({ critical }) {
+  const d = critical
+    ? 'M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4m0 4h.01'
+    : 'M12 22C6.48 22 2 17.52 2 12S6.48 2 12 2s10 4.48 10 10-4.48 10-10 10zm0-7v2m0-8v4'
+  return (
+    <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d={d} />
+    </svg>
+  )
+}
+
 function EarlyWarningBanner({ score, severity, breakdown }) {
   if (score < 20 || severity === 'NORMAL') return null
   const isCritical = severity === 'CRITICAL' || severity === 'EMERGENCY'
   return (
     <div className={`early-warning-banner ${isCritical ? 'critical' : ''}`}>
-      <span style={{ fontSize: 20 }}>{isCritical ? '🚨' : '⚠️'}</span>
+      <BannerIcon critical={isCritical} />
       <div className={`ew-text ${isCritical ? 'critical' : ''}`}>
         <strong>
           {isCritical ? 'CRITICAL ANOMALY DETECTED' : severity === 'WARNING' ? 'WARNING — Elevated Anomaly' : 'EARLY WARNING — Anomaly Rising'}
@@ -135,7 +147,7 @@ function ForecastBar({ breakdown, score }) {
   const secondsToWarning = velocity > 8 ? 5 : velocity > 5 ? 15 : 30
   return (
     <div className="forecast-bar">
-      <span className="forecast-label">⚡ FORECAST</span>
+      <span className="forecast-label">FORECAST</span>
       <span className="forecast-text">
         At current velocity ({velocity.toFixed(1)} pts), WARNING threshold may be reached in ~{secondsToWarning}s.
         {score > 40 && ' Consider pre-emptive action.'}
@@ -251,7 +263,13 @@ export default function App() {
       {/* ── Header ── */}
       <header className="app-header">
         <div className="brand">
-          <div className="brand-icon">◉</div>
+          <div className="brand-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <circle cx="12" cy="12" r="8" strokeOpacity="0.4" />
+              <path d="M12 2v2m0 16v2M2 12h2m16 0h2" strokeOpacity="0.5" />
+            </svg>
+          </div>
           <div className="brand-text">
             <h1>RIPPLE <span>AI</span></h1>
             <p>INCIDENT INTELLIGENCE PLATFORM</p>
@@ -269,16 +287,20 @@ export default function App() {
 
       {/* ── Demo keyboard strip ── */}
       <div className="demo-strip">
-        <strong>DEMO MODE</strong>
-        Keyboard shortcuts:
+        <strong>DEMO</strong>
         <kbd>N</kbd> Normal
         <kbd>D</kbd> DB Failure
         <kbd>E</kbd> Error Spike
-        <kbd>L</kbd> Latency Spike
+        <kbd>L</kbd> Latency
         <kbd>S</kbd> Security
-        <kbd>T</kbd> Traffic Surge
+        <kbd>T</kbd> Traffic
         <kbd>R</kbd> Recovery
-        <button className="reset-btn" onClick={handleReset}>↺ RESET</button>
+        <button className="reset-btn" onClick={handleReset}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{marginRight:4}}>
+            <path d="M1 4v6h6M23 20v-6h-6M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
+          </svg>
+          RESET
+        </button>
       </div>
 
       {/* ── Hero bar ── */}
@@ -293,8 +315,8 @@ export default function App() {
         </div>
         <div className={`incident-count-badge ${state.active_incidents > 0 ? 'has-incidents' : ''}`}>
           {state.active_incidents > 0
-            ? `🚨 ${state.active_incidents} ACTIVE INCIDENT${state.active_incidents > 1 ? 'S' : ''}`
-            : '✓ NO ACTIVE INCIDENTS'}
+            ? `${state.active_incidents} ACTIVE INCIDENT${state.active_incidents > 1 ? 'S' : ''}`
+            : 'NO ACTIVE INCIDENTS'}
         </div>
       </div>
 
