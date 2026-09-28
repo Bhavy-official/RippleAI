@@ -227,18 +227,22 @@ class IntelligenceService:
 
     def what_if(self, incident: dict[str, Any], multiplier: float) -> dict[str, Any]:
         multiplier = max(0.5, min(3.0, multiplier))
-        # Use actual baseline p95 latency from incident metrics if available
-        baseline_latency = 175  # ms — typical normal baseline
-        predicted_latency = round(baseline_latency * multiplier + incident.get("affected_requests", 0) * 0.1)
-        base_error = incident.get("peak_error_rate", 0.05)
+        baseline_latency = 175.0  # ms — typical normal baseline
+        # Estimate current peak latency from peak_error_rate (higher errors = higher latency)
+        peak_error = incident.get("peak_error_rate", 0.05)
+        estimated_peak_latency = baseline_latency + (peak_error * 3000)  # realistic DB latency relationship
+        predicted_latency = round(estimated_peak_latency * multiplier)
+        base_error = peak_error
         predicted_error = round(min(100, base_error * 100 * (1 + (multiplier - 1) * 1.5)), 1)
-        predicted_failed = round(incident.get("affected_requests", 0) * multiplier * 1.2)
+        predicted_failed = round(incident.get("affected_requests", 0) * multiplier * 1.3)
+        predicted_revenue = round(predicted_failed * 42.5, 2)
         return {
             "latency_multiplier": multiplier,
             "predicted_latency_ms": predicted_latency,
             "predicted_failed_transactions": predicted_failed,
             "predicted_error_rate_percent": predicted_error,
-            "predicted_revenue_at_risk": round(predicted_failed * 42.5, 2),
+            "predicted_revenue_at_risk": predicted_revenue,
+            "note": f"At {multiplier}x DB latency. Est. peak latency: {predicted_latency}ms.",
         }
 
 

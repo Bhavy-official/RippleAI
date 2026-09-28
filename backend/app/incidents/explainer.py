@@ -11,7 +11,7 @@ def explain(result: DetectionResult) -> list[str]:
     reasons: list[str] = []
     if baseline and metrics.error_rate > baseline.error_rate_mean:
         multiplier = metrics.error_rate / max(baseline.error_rate_mean, 0.001)
-        reasons.append(f"Error rate increased from {baseline.error_rate_mean:.1%} to {metrics.error_rate:.1%} ({multiplier:.1f}× baseline).")
+        reasons.append(f"Error rate increased from {baseline.error_rate_mean:.1%} to {metrics.error_rate:.1%} ({multiplier:.1f}x baseline).")
     if baseline and metrics.p95_latency > baseline.p95_latency_mean:
         reasons.append(f"P95 latency increased from {baseline.p95_latency_mean:.0f}ms to {metrics.p95_latency:.0f}ms.")
     if result.novel_errors:
