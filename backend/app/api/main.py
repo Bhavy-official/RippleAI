@@ -11,6 +11,10 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 from app.detection.engine import DetectionEngine, DetectionResult
 from app.incidents.service import IncidentService
@@ -34,6 +38,7 @@ class RippleRuntime:
         self.metric_history: deque[dict[str, Any]] = deque(maxlen=120)
         self.current_scenario = Scenario.NORMAL
         self._scenario_task: asyncio.Task | None = None
+        self._last_history_second: int = -1  # throttle: one chart point per second
         self.pipeline.subscribe(self._process)
 
     async def _process(self, event: LogEvent) -> None:
@@ -42,11 +47,17 @@ class RippleRuntime:
         if incident and incident.id not in self._published_incidents:
             self._published_incidents.add(incident.id)
             await self.aws.publish(incident.to_dict())
-        self.metric_history.append({
-            "timestamp": event.timestamp.isoformat(), "error_rate": round(self.latest.metrics.error_rate * 100, 2),
-            "p95_latency": round(self.latest.metrics.p95_latency, 1), "anomaly_score": self.latest.score,
-            "requests_per_second": round(self.latest.metrics.requests_per_second, 2),
-        })
+        # Throttle: one chart point per simulated second for smooth, readable charts
+        event_second = int(event.timestamp.timestamp())
+        if event_second != self._last_history_second:
+            self._last_history_second = event_second
+            self.metric_history.append({
+                "timestamp": event.timestamp.isoformat(),
+                "error_rate": round(self.latest.metrics.error_rate * 100, 2),
+                "p95_latency": round(self.latest.metrics.p95_latency, 1),
+                "anomaly_score": self.latest.score,
+                "requests_per_second": round(self.latest.metrics.requests_per_second, 2),
+            })
 
     async def start_scenario(self, scenario: Scenario) -> None:
         self.current_scenario = scenario
@@ -54,13 +65,11 @@ class RippleRuntime:
             self._scenario_task.cancel()
         # A timed producer makes escalation visibly animate in the actual dashboard.
         if scenario == Scenario.NORMAL:
-            count, interval = 10, 0.2
+            count, interval = 120, 0.2
         elif scenario == Scenario.RECOVERY:
-            # Seventy simulated seconds are enough to let the 60-second detector
-            # window expire a preceding failure while still playing quickly.
             count, interval = 70, 0.12
         else:
-            count, interval = 40, 0.12
+            count, interval = 60, 0.12
         self._scenario_task = asyncio.create_task(self.simulator.run(scenario, count=count, interval_seconds=interval))
 
     def snapshot(self) -> dict[str, Any]:
@@ -88,8 +97,18 @@ runtime = RippleRuntime()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    # Start with a short normal-traffic burst to seed the adaptive baseline,
+    # then auto-inject a Database Failure so the dashboard shows a live incident
+    # the moment any judge opens the browser.
     await runtime.start_scenario(Scenario.NORMAL)
+
+    async def _auto_demo():
+        await asyncio.sleep(8)   # 8 s of normal traffic builds the baseline (needs 5 samples)
+        await runtime.start_scenario(Scenario.DATABASE_FAILURE)
+
+    demo_task = asyncio.create_task(_auto_demo())
     yield
+    demo_task.cancel()
     if runtime._scenario_task:
         runtime._scenario_task.cancel()
 

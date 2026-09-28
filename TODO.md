@@ -10,11 +10,11 @@
 
 ## Phase 2 — Detection engine
 
-- [ ] Implement configurable sliding-window metrics.
-- [ ] Implement safe adaptive baseline statistics.
-- [ ] Implement weighted anomaly score and evidence breakdown.
-- [ ] Implement configurable severity mapping.
-- [ ] Implement normalized error fingerprints.
+- [x] Implement configurable sliding-window metrics.
+- [x] Implement safe adaptive baseline statistics.
+- [x] Implement weighted anomaly score and evidence breakdown.
+- [x] Implement configurable severity mapping.
+- [x] Implement normalized error fingerprints.
 - [x] Verify normal traffic stays low-score and injected failures score high.
 
 ## Phase 3 — Incident intelligence

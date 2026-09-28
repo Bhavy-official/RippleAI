@@ -36,11 +36,18 @@ class IntelligenceService:
 
     def investigate(self, incident: dict[str, Any], question: str) -> dict[str, str]:
         evidence = "; ".join(incident.get("explanation", []))
-        if os.getenv("OPENAI_API_KEY"):
+        if os.getenv("GROQ_API_KEY"):
             try:
-                from openai import OpenAI
-                response = OpenAI().responses.create(model=os.getenv("RIPPLE_OPENAI_MODEL", "gpt-6-astra"), input=f"Answer only from this incident evidence: {evidence}\nQuestion: {question}")
-                return {"question": question, "answer": response.output_text, "provider": "OpenAI Responses API"}
+                import groq
+                client = groq.Client(api_key=os.getenv("GROQ_API_KEY"))
+                response = client.chat.completions.create(
+                    model=os.getenv("RIPPLE_GROQ_MODEL", "llama3-8b-8192"),
+                    messages=[
+                        {"role": "system", "content": "You are a helpful SRE assistant. Answer concisely based ONLY on the provided evidence."},
+                        {"role": "user", "content": f"Evidence: {evidence}\nQuestion: {question}"}
+                    ]
+                )
+                return {"question": question, "answer": response.choices[0].message.content, "provider": "Groq"}
             except Exception:
                 pass
         answer = f"Based on calculated incident evidence: {evidence}"

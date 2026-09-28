@@ -45,6 +45,7 @@ class DetectionEngine:
         self.baseline = AdaptiveBaseline(self.config.baseline_history_size, self.config.baseline_minimum_samples)
         self._known_errors: set[str] = set()
         self._previous_error_rate = 0.0
+        self._last_baseline_second: int = -1  # track wall-second for per-tick baseline sampling
 
     def process(self, event: LogEvent) -> DetectionResult:
         metrics = self.window.add(event)
@@ -55,9 +56,14 @@ class DetectionEngine:
         result = DetectionResult(metrics, baseline, score, self._severity(score), breakdown, novel_errors, baseline is None)
         self._known_errors.update(metrics.error_frequencies)
         self._previous_error_rate = metrics.error_rate
-        # During warm-up, retain the observations. Once scoring, only normal-ish values teach the baseline.
-        if baseline is None or score < self.config.severity.warning:
-            self.baseline.add(metrics)
+        # Feed baseline once per simulated second (not per individual event) so each
+        # sample represents a genuinely different traffic pattern.
+        event_second = int(event.timestamp.timestamp())
+        if event_second != self._last_baseline_second:
+            self._last_baseline_second = event_second
+            # Only teach normal-ish seconds; never let an anomaly corrupt the baseline.
+            if baseline is None or score < self.config.severity.warning:
+                self.baseline.add(metrics)
         return result
 
     def _score(self, metrics: WindowMetrics, baseline: BaselineSnapshot | None, novel_errors: list[str]) -> dict[str, float]:
@@ -69,7 +75,8 @@ class DetectionEngine:
         traffic = _z_signal(metrics.requests_per_second, baseline.requests_per_second_mean, max(baseline.requests_per_second_std, self.config.traffic_std_floor))
         latency = _z_signal(metrics.p95_latency, baseline.p95_latency_mean, max(baseline.p95_latency_std, self.config.latency_std_floor))
         novelty = 100.0 if novel_errors else 0.0
-        velocity = min(100.0, max(0.0, (metrics.error_rate - self._previous_error_rate) * 1000))
+        # Velocity: scale by 100 so even a 5% error-rate jump per event scores visibly
+        velocity = min(100.0, max(0.0, (metrics.error_rate - self._previous_error_rate) * 100.0))
         return {
             "error_rate_deviation": round(weights.error_rate * error, 1),
             "traffic_deviation": round(weights.traffic * traffic, 1),

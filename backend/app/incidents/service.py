@@ -12,7 +12,7 @@ from .models import Incident, IncidentState, TimelineEntry
 
 
 class IncidentService:
-    def __init__(self, activation_score: float = 40.0, resolution_score: float = 20.0, recovery_observations: int = 3) -> None:
+    def __init__(self, activation_score: float = 30.0, resolution_score: float = 18.0, recovery_observations: int = 3) -> None:
         self.activation_score = activation_score
         self.resolution_score = resolution_score
         self.recovery_observations = recovery_observations
