@@ -181,7 +181,16 @@ export default function IntelligencePanel({ incident }) {
         {answer && (
           <div className="intel-result">
             <div className="intel-result-label">AI INVESTIGATOR RESPONSE</div>
-            {answer.answer}
+            <div style={{ lineHeight: 1.8 }}
+              dangerouslySetInnerHTML={{
+                __html: answer.answer
+                  .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#c5d8ff">$1</strong>')
+                  .replace(/^• (.+)$/gm, '<span style="display:block;padding-left:12px;borderLeft:2px solid #2a3d66;margin:3px 0">• $1</span>')
+                  .replace(/^(\d+\. .+)$/gm, '<span style="display:block;padding:4px 0 4px 12px;color:#a8c7ff">$1</span>')
+                  .replace(/\n\n/g, '<br/><br/>')
+                  .replace(/\n/g, '<br/>')
+              }}
+            />
             <small>Powered by {answer.provider}</small>
           </div>
         )}
@@ -190,7 +199,13 @@ export default function IntelligencePanel({ incident }) {
         {intel?.remediation?.action && (
           <div className="intel-result">
             <div className="intel-result-label">AUTO-GENERATED REMEDIATION PROPOSAL</div>
-            {intel.remediation.action}
+            <div style={{ lineHeight: 1.9 }}
+              dangerouslySetInnerHTML={{
+                __html: intel.remediation.action
+                  .replace(/^(\d+\. .+)$/gm, '<span style="display:block;padding:5px 0 5px 14px;borderLeft:2px solid #3a5ba8;margin:3px 0;color:#c5d8ff">$1</span>')
+                  .replace(/\n/g, '')
+              }}
+            />
           </div>
         )}
 
