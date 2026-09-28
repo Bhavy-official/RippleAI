@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 const SCENARIO_LABELS = {
   DATABASE_FAILURE: 'Database Connection Failure',
@@ -84,7 +84,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
   let finalY = 30;
 
   // 1. Overview Table
-  doc.autoTable({
+  autoTable(doc, {
     ...commonOptions,
     startY: finalY,
     head: [['INCIDENT OVERVIEW', '']],
@@ -110,7 +110,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
   // 2. Blast Radius (Endpoints)
   const endpoints = Object.entries(incident.affected_endpoints || {}).sort((a, b) => b[1] - a[1])
   if (endpoints.length > 0) {
-    doc.autoTable({
+    autoTable(doc, {
       ...commonOptions,
       startY: finalY,
       head: [['BLAST RADIUS (ENDPOINTS)', 'REQUESTS']],
@@ -126,7 +126,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
   // 3. Affected Services
   const services = Object.entries(incident.affected_services || {}).sort((a, b) => b[1] - a[1])
   if (services.length > 0) {
-    doc.autoTable({
+    autoTable(doc, {
       ...commonOptions,
       startY: finalY,
       head: [['AFFECTED SERVICES', 'EVENTS']],
@@ -153,7 +153,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
       v.toFixed(1)
     ])
     
-    doc.autoTable({
+    autoTable(doc, {
       ...commonOptions,
       startY: finalY,
       head: [['ANOMALY SIGNAL BREAKDOWN', 'CONTRIBUTION (0-100)']],
@@ -168,7 +168,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
 
   // 5. Detection Evidence (Why detected)
   if (incident.explanation && incident.explanation.length > 0) {
-    doc.autoTable({
+    autoTable(doc, {
       ...commonOptions,
       startY: finalY,
       head: [['DETECTION EVIDENCE']],
@@ -215,7 +215,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
     }
 
     if (intelBody.length > 0) {
-      doc.autoTable({
+      autoTable(doc, {
         ...commonOptions,
         startY: finalY,
         head: [['AI INTELLIGENCE REPORT']],
@@ -233,7 +233,7 @@ export async function generateIncidentReport(incident, intelligenceData = null) 
       t.detail
     ])
 
-    doc.autoTable({
+    autoTable(doc, {
       ...commonOptions,
       startY: finalY,
       head: [['TIMELINE', 'EVENT']],
