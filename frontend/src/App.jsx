@@ -83,6 +83,17 @@ function ScoreBreakdown({ breakdown }) {
   )
 }
 
+const SCENARIO_LABELS = {
+  DATABASE_FAILURE: 'DB Connection Failure',
+  ERROR_SPIKE: 'Error Rate Spike',
+  LATENCY_SPIKE: 'Latency Spike',
+  TRAFFIC_SURGE: 'Traffic Surge',
+  SECURITY_ANOMALY: 'Security Anomaly',
+  RECOVERY: 'Recovery',
+  NORMAL: 'System Anomaly',
+  UNKNOWN: 'System Anomaly',
+}
+
 function IncidentsList({ incidents, selectedId, onSelect }) {
   if (!incidents || incidents.length === 0) return null
   return (
@@ -92,7 +103,7 @@ function IncidentsList({ incidents, selectedId, onSelect }) {
       </div>
       <div className="incident-list">
         {incidents.slice().reverse().map(inc => {
-          const name = inc.related_fingerprints?.[0] || Object.keys(inc.affected_endpoints || {})[0] || 'System Anomaly'
+          const name = SCENARIO_LABELS[inc.scenario_type] || inc.related_fingerprints?.[0] || 'System Anomaly'
           const scoreColor = inc.peak_score >= 65 ? '#fca5a5' : inc.peak_score >= 35 ? '#fde68a' : '#6ee7b7'
           return (
             <div

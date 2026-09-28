@@ -1,27 +1,27 @@
-// Map raw fingerprint strings to friendly scenario names
+// Human-readable titles keyed on the backend scenario_type field
+const SCENARIO_TITLES = {
+  DATABASE_FAILURE:  'Database Connection Failure',
+  ERROR_SPIKE:       'Error Rate Spike — Upstream Unavailable',
+  LATENCY_SPIKE:     'Latency Spike — Slow Downstream Response',
+  TRAFFIC_SURGE:     'Traffic Volume Surge',
+  SECURITY_ANOMALY:  'Security Anomaly — Auth Failure Spike',
+  RECOVERY:          'Recovery — Metrics Stabilising',
+  NORMAL:            'Elevated System Anomaly',
+  UNKNOWN:           'Elevated System Anomaly',
+}
+
 function deriveTitle(incident) {
+  // Prefer backend-stamped scenario type (most reliable)
+  if (incident.scenario_type && SCENARIO_TITLES[incident.scenario_type]) {
+    return SCENARIO_TITLES[incident.scenario_type]
+  }
+  // Fingerprint fallback for older incidents without scenario_type
   const fps = incident.related_fingerprints || []
-  const services = Object.keys(incident.affected_services || {})
   const endpoints = Object.keys(incident.affected_endpoints || {})
-
-  const fp0 = fps[0] || ''
-
-  // DB / connection errors
-  if (fps.some(f => f.includes('DBConnection') || f.includes('Timeout') || f.includes('ECONNREFUSED')))
-    return 'Database Connection Failure'
-  // Security / auth patterns
-  if (fps.some(f => f.includes('auth') || f.includes('Login') || f.includes('Unauthorized') || f.includes('<*> failed')) ||
-      endpoints.some(e => e.includes('/login') || e.includes('/auth')))
-    return 'Security Anomaly — Auth Failure Spike'
-  // Latency patterns
-  if (fps.some(f => f.includes('latency') || f.includes('slow') || f.includes('timeout')))
-    return 'Latency Spike — Upstream Degradation'
-  // Traffic surge (no errors, just volume)
-  if (!fp0 && services.length > 0 && incident.peak_score < 60)
-    return 'Traffic Volume Surge'
-  // Generic error rate
-  if (fps.length > 0) return fps[0].length > 60 ? fps[0].slice(0, 60) + '…' : fps[0]
-  // Fallback: use top endpoint
+  if (fps.some(f => f.includes('DBConnection') || f === 'DBConnectionTimeout')) return 'Database Connection Failure'
+  if (fps.some(f => f.includes('auth') || f.includes('Unauthorized')) || endpoints.some(e => e.includes('/login'))) return 'Security Anomaly'
+  if (fps.some(f => f.includes('Slow') || f.includes('latency'))) return 'Latency Spike'
+  if (fps.some(f => f.includes('Upstream'))) return 'Error Rate Spike'
   if (endpoints.length > 0) return `Elevated Errors — ${endpoints[0]}`
   return 'Elevated System Anomaly'
 }
